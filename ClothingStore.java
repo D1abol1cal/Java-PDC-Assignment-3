@@ -15,7 +15,6 @@ public class ClothingStore {
 
         fittingRooms = new Semaphore(numFittingRooms, true);
         waitingChairs = new Semaphore(numWaitingChairs, true);
-        
         new Semaphore(1, true);
         random = new Random();
     }
@@ -24,7 +23,7 @@ public class ClothingStore {
         Thread[] customers = new Thread[num_customers];
 
         for (int i = 0; i < num_customers; i++) {
-            customers[i] = new Thread(new Customer(i + 1));
+            customers[i] = new Thread(new Customer(i));
             customers[i].start();
         }
 
@@ -53,21 +52,25 @@ public class ClothingStore {
                     Thread.sleep(random.nextInt(1000));
 
                     if (waitingChairs.tryAcquire()) {
-                        System.out.println("Customer #" + id + " enters the waiting area and has a seat. We have " +
+                        System.out.println("Customer # " + id + " enters the system");
+
+                        System.out.println("    Customer # " + id + " enters the waiting area and has a seat. We have " +
                                 (num_customers - waitingChairs.availablePermits()) + " waiting");
+
                         fittingRooms.acquire();
                         waitingChairs.release();
-                        System.out.println("Customer #" + id + " enters the fitting room. We have " +
-                                fittingRooms.availablePermits() + " changing and " + waitingChairs.availablePermits() + " waiting");
-                        Thread.sleep(random.nextInt(1000));
+                        System.out.println("        Customer # " + id + " enters the fitting room. We have " +
+                                fittingRooms.availablePermits() + " changing and " + waitingChairs.availablePermits() + " waiting.");
+                        
 
-                        System.out.println("Customer #" + id + " leaves the fitting room.");
+                        System.out.println("            Customer # " + id + " leaves the fitting room.");
+
                         fittingRooms.release();
-                        Thread.sleep(random.nextInt(1000));
+                      
 
-                        System.out.println("Customer #" + id + " leaves the store.");
+
                     } else {
-                        System.out.println("Customer #" + id + " left in frustration.");
+                        System.out.println("                Customer # " + id + " left in frustration.");
                         break;
                     }
                 }
@@ -85,4 +88,3 @@ public class ClothingStore {
         store.runSimulation();
     }
 }
-
