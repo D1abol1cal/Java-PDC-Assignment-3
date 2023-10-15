@@ -23,7 +23,7 @@ public class FittingRoom {
     public void runSimulation() {
         Thread[] customers = new Thread[num_customers];
 
-        for (int i = 0; i < num_customers; i++) {
+        for (int i = 1; i <= num_customers; i++) {
             customers[i] = new Thread(new Customer(i));
             customers[i].start();
         }
@@ -91,7 +91,6 @@ public class FittingRoom {
         store.runSimulation();
     }
 }
-
 
 
 
