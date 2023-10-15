@@ -1,96 +1,88 @@
-import java.util.concurrent.Semaphore;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FittingRoom {
-    private static int num_customers;
-    private static int simulation_time_seconds;
+    
+    private static Semaphore fittingRooms;
+    private static Semaphore waitingArea;
+    private static Lock lock = new ReentrantLock();
 
-    private Semaphore fittingRooms;
-    private Semaphore waitingChairs;
-    private Random random;
+    public static void main(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: java FittingRoom <time_seconds> <num_fitting_rooms>");
+            return;
+        }
 
-    public FittingRoom(int numFittingRooms, int numWaitingChairs, int simulationTimeSeconds) {
-        num_customers = numFittingRooms + numWaitingChairs;
-        simulation_time_seconds = simulationTimeSeconds;
+        int simulationTime = Integer.parseInt(args[0]);
+        int numFittingRooms = Integer.parseInt(args[1]);
+        int numWaitingChairs = numFittingRooms * 2;
+        int numCustomers = numFittingRooms + numWaitingChairs;
 
         fittingRooms = new Semaphore(numFittingRooms, true);
-        waitingChairs = new Semaphore(numWaitingChairs, true);
-        new Semaphore(1, true);
-        random = new Random();
-    }
+        waitingArea = new Semaphore(numWaitingChairs, true);
 
+        System.out.println("Sleep Time : " + simulationTime + "\nFitting rooms : " + numFittingRooms + "\nNumber of chairs in waiting area : " + numWaitingChairs + "\nNumber of customers : " + numCustomers );
+        
 
-    public void runSimulation() {
-        Thread[] customers = new Thread[num_customers];
+        Thread systemThread = new Thread(new SystemThread(simulationTime));
+        systemThread.start();
 
-        for (int i = 1; i <= num_customers; i++) {
-            customers[i] = new Thread(new Customer(i));
-            customers[i].start();
-        }
-
-        try {
-            Thread.sleep(simulation_time_seconds * 1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        for (Thread customer : customers) {
-            customer.interrupt();
-
+        for (int i = 1; i <= numCustomers; i++) {
+            Thread customerThread = new Thread(new CustomerThread(i));
+            customerThread.start();
         }
     }
 
-    class Customer implements Runnable {
-        private final int id;
+    static class SystemThread implements Runnable {
+        private int simulationTime;
 
-        public Customer(int id) {
-            this.id = id;
+        public SystemThread(int simulationTime) {
+            this.simulationTime = simulationTime;
         }
 
         @Override
         public void run() {
+            // System logic
             try {
-                while (true) {
-                    Thread.sleep(random.nextInt(1000));
-
-                    if (waitingChairs.tryAcquire()) {
-                        System.out.println("Customer # " + id + " enters the system");
-
-                        System.out.println("    Customer # " + id + " enters the waiting area and has a seat. We have " +
-                                (num_customers - waitingChairs.availablePermits()) + " waiting");
-
-                        fittingRooms.acquire();
-                        waitingChairs.release();
-                        System.out.println("        Customer # " + id + " enters the fitting room. We have " +
-                                fittingRooms.availablePermits() + " changing and " + waitingChairs.availablePermits() + " waiting.");
-                        Thread.sleep(random.nextInt(1000));
-                        
-
-                        System.out.println("            Customer # " + id + " leaves the fitting room.");
-
-                        fittingRooms.release();
-                      
-
-
-                    } else {
-                        System.out.println("                Customer # " + id + " left in frustration.");
-                        break;
-                    }
-                }
+                Thread.sleep(simulationTime * 1000);
+                System.out.println("System: Simulation ended. Closing the store.");
+                System.exit(0);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                e.printStackTrace();
             }
         }
     }
 
-    public static void main(String[] args) {
-        final int numFittingRooms = Integer.parseInt(args[1]);
-        final int simulationTime = Integer.parseInt(args[0]);
-        final int numWaitingChairs = numFittingRooms * 2;
-        FittingRoom store = new FittingRoom(numFittingRooms, numWaitingChairs, simulationTime);
-        store.runSimulation();
+    static class CustomerThread implements Runnable {
+        private int customerNumber;
+
+        public CustomerThread(int customerNumber) {
+            this.customerNumber = customerNumber;
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Customer # " + customerNumber + " enters the system");
+            try {
+                Thread.sleep(new Random().nextInt(1000));
+                System.out.println("     Customer # " + customerNumber + " enters the waiting area and has a seat. We have "
+                        + waitingArea.availablePermits() + " waiting");
+
+                waitingArea.acquire();
+                System.out.println("          Customer # " + customerNumber + " enters fitting room. We have "
+                        + fittingRooms.availablePermits() + " changing " + waitingArea.availablePermits() + " waiting");
+
+                fittingRooms.acquire();
+                Thread.sleep(new Random().nextInt(1000));
+                System.out.println("               Customer # " + customerNumber + " leaves fitting room");
+
+                fittingRooms.release();
+                waitingArea.release();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
-
-
-
