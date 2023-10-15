@@ -1,7 +1,7 @@
 import java.util.concurrent.Semaphore;
 import java.util.Random;
 
-public class ClothingStore {
+public class FittingRoom {
     private static int num_customers;
     private static int simulation_time_seconds;
 
@@ -9,7 +9,7 @@ public class ClothingStore {
     private Semaphore waitingChairs;
     private Random random;
 
-    public ClothingStore(int numFittingRooms, int numWaitingChairs, int simulationTimeSeconds) {
+    public FittingRoom(int numFittingRooms, int numWaitingChairs, int simulationTimeSeconds) {
         num_customers = numFittingRooms + numWaitingChairs;
         simulation_time_seconds = simulationTimeSeconds;
 
@@ -18,6 +18,7 @@ public class ClothingStore {
         new Semaphore(1, true);
         random = new Random();
     }
+
 
     public void runSimulation() {
         Thread[] customers = new Thread[num_customers];
@@ -35,6 +36,7 @@ public class ClothingStore {
 
         for (Thread customer : customers) {
             customer.interrupt();
+
         }
     }
 
@@ -61,6 +63,7 @@ public class ClothingStore {
                         waitingChairs.release();
                         System.out.println("        Customer # " + id + " enters the fitting room. We have " +
                                 fittingRooms.availablePermits() + " changing and " + waitingChairs.availablePermits() + " waiting.");
+                        Thread.sleep(random.nextInt(1000));
                         
 
                         System.out.println("            Customer # " + id + " leaves the fitting room.");
@@ -84,7 +87,11 @@ public class ClothingStore {
         final int numFittingRooms = Integer.parseInt(args[1]);
         final int simulationTime = Integer.parseInt(args[0]);
         final int numWaitingChairs = numFittingRooms * 2;
-        ClothingStore store = new ClothingStore(numFittingRooms, numWaitingChairs, simulationTime);
+        FittingRoom store = new FittingRoom(numFittingRooms, numWaitingChairs, simulationTime);
         store.runSimulation();
     }
 }
+
+
+
+
